@@ -36,22 +36,21 @@ class MsCalendar {
 		$result = $dbr->select( 'mscal_names', array( 'ID' ), array( 'Cal_Name' => $name ));
 		$row = $dbr->fetchRow( $result );
 		if ( $row ) {
-			$id = $row['ID'];
+			$id = $row["id"];
 		} else {
 			$dbw = wfGetDB( DB_MASTER );
 			$dbw->insert(
 				'mscal_names',
 				array(
-					'ID' => null,
 					'Cal_Name' => $name,
 				)
 			);
-			$id = $dbw->insert_id;
+			$id = $dbw->insertid();
 		}
 
 		$parser->disableCache();
 		$wgOut->addModules( 'ext.MsCalendar' );
-		$output = '<div class="ms-calendar-header">';
+	        $output = '<div class="ms-calendar-header">';
 		$output .= '<div class="righty">';
 		$output .= '<span class="ms-calendar-prev">&#10094;</span>';
 		$output .= '<span class="ms-calendar-year-month"><span class="ms-calendar-month"></span></span>';
@@ -76,37 +75,37 @@ class MsCalendar {
 		$result = $dbr->select(
 			array( 'a' => 'mscal_list', 'b' => 'mscal_content' ),
 			array(
-				"DATE_FORMAT(Date, '%m') as monat", "YEAR(date) as jahr", "DAY(date) as tag",
-				"DATE_FORMAT(Date, '%m-%d-%Y') as Datum",
+				"TO_CHAR(date, 'Mon') as monat", "TO_CHAR(date, 'YYYY') as jahr", "TO_CHAR(date, 'DD') as tag",
+				"TO_CHAR(date, 'MM-DD-YYYY') as Datum",
 				'Text_ID', 'b.ID', 'Text', 'Duration',
 				'Start_Date', 'Yearly', 'Day_of_Set',
 			),
 			array(
-				'MONTH(Date)' => $month,
-				'YEAR(Date)'  => $year,
+				"TO_CHAR(date, 'MM')" => $month,
+				"TO_CHAR(date, 'YYYY')"  => $year,
 				'a.Text_ID = b.ID',
 				'a.Cal_ID'    => $calendarId,
 			),
 			__METHOD__,
 			array( 'ORDER BY' => ($calendarSort == 'id') ? 'ID' : 'Text' )
 		);
-		while ( $row = $dbr->fetchRow( $result ) ) {
+	    while ( $row = $dbr->fetchRow( $result ) ) {
 			if ( $row['jahr'] == $year)	{
-				$vars[ $row['Datum'] ][] = array(
-					'ID' => $row['Text_ID'],
-					'Text' => $row['Text'],
-					'Duration' => $row['Duration'],
-					'Day' => $row['Day_of_Set'],
-					'Yearly' => $row['Yearly']
+				$vars[ $row['datum'] ][] = array(
+					'ID' => $row['text_id'],
+					'Text' => $row['text'],
+					'Duration' => $row['duration'],
+					'Day' => $row['day_of_set'],
+					'Yearly' => $row['yearly']
 				);
-			} else if ( $row['Yearly'] == 1 ) {
+			} else if ( $row['yearly'] == 1 ) {
 				$new_date = $row['monat'] . '-' . $row['tag'] . '-' . $year;
 				$vars[ $new_date ][] = array(
-					'ID' => $row['Text_ID'],
-					'Text' => $row['Text'],
-					'Duration' => $row['Duration'],
-					'Day' => $row['Day_of_Set'],
-					'Yearly' => $row['Yearly']
+					'ID' => $row['text_id'],
+					'Text' => $row['text'],
+					'Duration' => $row['duration'],
+					'Day' => $row['day_of_set'],
+					'Yearly' => $row['yearly']
 				);
 			}
 		}
@@ -122,7 +121,6 @@ class MsCalendar {
 		$dbw->insert(
 			'mscal_content',
 			array(
-				'ID'         => null,
 				'Text'       => $title,
 				'Start_Date' => $newDate,
 				'Duration'   => $duration,
@@ -139,7 +137,6 @@ class MsCalendar {
 			$dbw->insert(
 				'mscal_list',
 				array(
-					'ID'         => null,
 					'Date'       => $addDate,
 					'Text_ID'    => $maxId,
 					'Day_of_Set' => $i + 1,
@@ -180,7 +177,6 @@ class MsCalendar {
 			$dbw->insert(
 				'mscal_list',
 				array(
-					'ID'         => null,
 					'Date'       => $addDate,
 					'Text_ID'    => $eventId,
 					'Day_of_Set' => $i + 1,
